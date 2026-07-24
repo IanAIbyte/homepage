@@ -40,27 +40,22 @@ export interface RegenerateDeps {
  *   Step A — invoke the analyzer (Claude / Agent SDK in production, a mock
  *            in tests) to author or update `<project>.architecture.json`.
  *   Step B — validate + deterministically render the JSON to HTML via the
- *            injected `render` function (defaults to `renderArchify`).
+ *            injected `render` function (defaults to `renderArchify``.
  *
- * On a Step B failure we feed the validate/render error back to the analyzer
- * and retry Step A exactly once. If the retry also fails (or the analyzer
- * itself errors), the job is marked `failed`; the previously delivered HTML
- * is preserved by `renderArchify`'s atomic `deliver` contract — the
+ * Retry policy: a non-layout Step B failure feeds the error back to the
+ * analyzer and retries Step A (up to MAX_ATTEMPTS). archify *layout* failures
+ * (overlaps / off-canvas / diagonals) are structural and seldom self-correct
+ * on re-analysis, so they fail fast — see `isLayoutError`. The previous HTML
+ * artifact is preserved by `renderArchify`'s atomic `deliver` contract; the
  * orchestrator never deletes it.
  *
- * The analyzer is injected (rather than imported here) so the full logic is
- * unit-testable with a mock, decoupled from the real Agent SDK wiring (Task 9).
+ * The analyzer is injected so the full logic is unit-testable with a mock.
  */
 export async function runRegeneration(job: Job, project: RegenerateProject, deps: RegenerateDeps): Promise<void> {
   const ctl = jobController(job);
   ctl.markRunning();
 
   const quality = deps.quality ?? "standard";
-
-  // Up to MAX_ATTEMPTS passes of (Step A analyze -> Step B validate+render).
-  // The first pass has no prior error; each failed render feeds its error back
-  // to the analyzer so Claude can correct the JSON. The previous HTML artifact
-  // is left untouched on every failure — `deliver` only replaces it on success.
   const MAX_ATTEMPTS = 3; // 1 initial + up to 2 retries with feedback
   let priorError: string | undefined;
 
@@ -92,14 +87,29 @@ export async function runRegeneration(job: Job, project: RegenerateProject, deps
     }
 
     priorError = r.error;
-    if (attempt < MAX_ATTEMPTS) {
-      ctl.pushProgress(
-        `render/validate failed (attempt ${attempt}/${MAX_ATTEMPTS}): ${r.error}; retrying analysis with feedback`,
+    // Layout failures are structural — fail fast instead of burning two more
+    // ~5-min analyses (which rarely fix overlaps and invite a hang).
+    const layoutFail = isLayoutError(r.error);
+    if (layoutFail || attempt >= MAX_ATTEMPTS) {
+      ctl.fail(
+        layoutFail
+          ? `archify layout validation failed (not retried — overlaps/off-canvas rarely self-correct): ${r.error ?? "unknown"}`
+          : `archify render failed after ${MAX_ATTEMPTS} attempts: ${r.error ?? "unknown"}`,
       );
+      return;
     }
+    ctl.pushProgress(
+      `render/validate failed (attempt ${attempt}/${MAX_ATTEMPTS}): ${r.error}; retrying analysis with feedback`,
+    );
   }
+}
 
-  ctl.fail(`archify render failed after ${MAX_ATTEMPTS} attempts: ${priorError ?? "unknown"}`);
-  // No half-written JSON is promoted: the prior HTML is preserved by
-  // `deliver`'s atomic contract, and we never delete it here.
+/**
+ * archify renders reject diagrams whose layout is invalid — labels/nodes that
+ * overlap, elements off-canvas, or non-orthogonal (diagonal) connections. These
+ * are structural mistakes in the authored JSON that a fresh analysis pass seldom
+ * corrects, so the orchestrator treats them as non-retryable.
+ */
+export function isLayoutError(error?: string): boolean {
+  return /overlap|off-?canvas|out of canvas|diagonal/i.test(error ?? "");
 }
