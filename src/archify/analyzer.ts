@@ -35,8 +35,10 @@ Rules:
   return base;
 }
 
-/** Step A timeout: 5 minutes (plan self-review mandate). */
-const ANALYZER_TIMEOUT_MS = 5 * 60 * 1000;
+/** Step A timeout. The analyzer inspects real code with Read/Glob/Grep and can
+ *  take well past 5 min on non-trivial repos, so default generously and allow
+ *  override via env. Too short = every regenerate aborts before writing JSON. */
+const ANALYZER_TIMEOUT_MS = Number(process.env.ARCHIFY_ANALYZER_TIMEOUT_MS) || 15 * 60 * 1000;
 
 /**
  * Real Step A analyzer: drives headless Claude via the Agent SDK to

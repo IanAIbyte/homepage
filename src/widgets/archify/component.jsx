@@ -42,7 +42,8 @@ export default function Component({ service }) {
     try {
       const { jobId } = await (await fetch(`/api/archify/${id}/regenerate`, { method: "POST" })).json();
       let attempts = 0;
-      const MAX_ATTEMPTS = 280;
+      // keep polling across the full server-side analyzer window (15 min default)
+      const MAX_ATTEMPTS = 620;
       const poll = async () => {
         try {
           const j = await (await fetch(`/api/archify/jobs/${jobId}`)).json();
