@@ -5,6 +5,7 @@ import type { Job } from "./types";
 export interface AnalyzerCtx {
   projectPath: string;
   jsonPath: string;
+  archifyBin: string;
   priorError?: string;
   onProgress: (line: string) => void;
 }
@@ -65,6 +66,7 @@ export async function runRegeneration(job: Job, project: RegenerateProject, deps
     const a = await deps.analyzer({
       projectPath: project.path,
       jsonPath: project.jsonPath,
+      archifyBin: deps.archifyBin,
       priorError,
       onProgress: (l) => ctl.pushProgress(l),
     });
