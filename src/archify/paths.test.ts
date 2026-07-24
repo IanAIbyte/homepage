@@ -25,4 +25,6 @@ test("jsonPath/htmlPath land inside DATA_DIR with the expected file names", () =
   expect(jsonPath(id)).toBe(path.join(DATA_DIR, "abc-123.architecture.json"));
   expect(htmlPath(id)).toBe(path.join(DATA_DIR, "abc-123-architecture.html"));
   expect(DATA_DIR.endsWith(path.join("data", "archify"))).toBe(true);
+  // Strict: DATA_DIR must resolve inside the homepage repo, not above it
+  expect(DATA_DIR.replace(/\\/g, "/")).toMatch(/\/homepage\/data\/archify$/);
 });

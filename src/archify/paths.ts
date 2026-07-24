@@ -1,11 +1,11 @@
-import path from "node:path";
-import os from "node:os";
 import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // <homepage-root>/data/archify
-export const DATA_DIR = path.resolve(__dirname, "..", "..", "..", "data", "archify");
+export const DATA_DIR = path.resolve(__dirname, "..", "..", "data", "archify");
 
 export function jsonPath(id: string): string {
   return path.join(DATA_DIR, `${id}.architecture.json`);
