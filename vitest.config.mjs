@@ -24,6 +24,7 @@ export default defineConfig({
     pool: "threads",
     setupFiles: ["./vitest.setup.js"],
     include: ["src/**/*.test.{js,jsx,ts,tsx}", "src/**/*.spec.{js,jsx,ts,tsx}"],
+    exclude: ["**/node_modules/**", "**/dist/**", "**/._*"],
     coverage: {
       provider: "v8",
       all: true,

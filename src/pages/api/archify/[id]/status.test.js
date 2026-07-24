@@ -2,13 +2,15 @@
 // Asserts 404 (unknown project / no widget.path) and 200 (renderState echoed).
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getServiceArchifyPath, inspectArchify } = vi.hoisted(() => ({
+const { getServiceArchifyPath, inspectArchify, resolveProjectPath } = vi.hoisted(() => ({
   getServiceArchifyPath: vi.fn(),
   inspectArchify: vi.fn(),
+  resolveProjectPath: vi.fn(),
 }));
 
 vi.mock("../../../../archify/service-config", () => ({ getServiceArchifyPath }));
 vi.mock("../../../../archify/status", () => ({ inspectArchify }));
+vi.mock("../../../../archify/paths", () => ({ resolveProjectPath }));
 
 function mockResponse() {
   const res = {
@@ -47,6 +49,7 @@ describe("pages/api/archify/[id]/status", () => {
 
   it("returns 200 with the inspected status when the project is known", async () => {
     getServiceArchifyPath.mockResolvedValue("/projects/proj");
+    resolveProjectPath.mockReturnValue("/projects/proj");
     const status = { renderState: "ok", htmlMtime: "2026-07-24T00:00:00.000Z" };
     inspectArchify.mockResolvedValue(status);
     const handler = await loadHandler();
@@ -54,6 +57,19 @@ describe("pages/api/archify/[id]/status", () => {
     await handler({ query: { id: "proj" } }, res);
     expect(inspectArchify).toHaveBeenCalledWith("proj", "/projects/proj");
     expect(res.status).not.toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith(status);
+  });
+
+  it("expands ~ in the project path via resolveProjectPath before inspecting", async () => {
+    getServiceArchifyPath.mockResolvedValue("~/x");
+    resolveProjectPath.mockReturnValue("/expanded/x");
+    const status = { renderState: "ok" };
+    inspectArchify.mockResolvedValue(status);
+    const handler = await loadHandler();
+    const res = mockResponse();
+    await handler({ query: { id: "proj" } }, res);
+    expect(resolveProjectPath).toHaveBeenCalledWith("~/x");
+    expect(inspectArchify).toHaveBeenCalledWith("proj", "/expanded/x");
     expect(res.send).toHaveBeenCalledWith(status);
   });
 });

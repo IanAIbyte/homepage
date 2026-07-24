@@ -21,13 +21,13 @@ export default function Component({ service }) {
     const t = setInterval(refresh, 15000);
     return () => clearInterval(t);
   }, []);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
       mountedRef.current = false;
       if (pollTimer.current) clearTimeout(pollTimer.current);
-    },
-    [],
-  );
+    };
+  }, []);
 
   async function regenerate() {
     setBusy(true);
