@@ -1,6 +1,6 @@
-import fs from "node:fs/promises";
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import type { Analyzer, AnalyzerCtx } from "./regenerate.js";
+import fs from "node:fs/promises";
+import type { Analyzer, AnalyzerCtx } from "./regenerate";
 
 /**
  * Pure prompt builder for the archify Step A analyzer.
@@ -14,11 +14,7 @@ import type { Analyzer, AnalyzerCtx } from "./regenerate.js";
  *  - and, when `priorError` is provided, feeds back the validation error
  *    from a previous attempt so Claude can correct the JSON.
  */
-export function buildPrompt(opts: {
-  projectPath: string;
-  jsonPath: string;
-  priorError?: string;
-}): string {
+export function buildPrompt(opts: { projectPath: string; jsonPath: string; priorError?: string }): string {
   const name = opts.projectPath.split("/").pop() ?? "project";
   const base = `You are operating the archify skill. Read its full guide at ~/.claude/skills/archify/SKILL.md and the architecture schema at ~/.claude/skills/archify/schemas/architecture.schema.json, and study the worked example at ~/.claude/skills/archify/examples/web-app.architecture.json.
 
@@ -78,9 +74,7 @@ export const claudeAnalyzer: Analyzer = async (ctx: AnalyzerCtx) => {
       },
     })) {
       if (msg.type === "assistant" && msg.message?.content) {
-        for (const block of msg.message.content as unknown as Array<
-          Record<string, unknown>
-        >) {
+        for (const block of msg.message.content as unknown as Array<Record<string, unknown>>) {
           if ("text" in block && block.text) {
             ctx.onProgress(String(block.text).slice(0, 200));
           } else if ("name" in block) {

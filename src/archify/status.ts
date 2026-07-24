@@ -1,14 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { jsonPath, htmlPath } from "./paths.js";
-import type { ArchifyStatus, RenderState } from "./types.js";
+import { htmlPath, jsonPath } from "./paths";
+import type { ArchifyStatus, RenderState } from "./types";
 
 export type { ArchifyStatus, RenderState };
 
-export async function inspectArchify(
-  id: string,
-  projectPath: string,
-): Promise<ArchifyStatus> {
+export async function inspectArchify(id: string, projectPath: string): Promise<ArchifyStatus> {
   try {
     await fs.access(jsonPath(id));
   } catch {

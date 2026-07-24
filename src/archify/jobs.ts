@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Job } from "./types.js";
+import type { Job } from "./types";
 
 const jobs = new Map<string, Job>();
 

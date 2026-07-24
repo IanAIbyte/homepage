@@ -1,6 +1,6 @@
-import type { RenderResult } from "./archify-runner.js";
-import { jobController } from "./jobs.js";
-import type { Job } from "./types.js";
+import type { RenderResult } from "./archify-runner";
+import { jobController } from "./jobs";
+import type { Job } from "./types";
 
 export interface AnalyzerCtx {
   projectPath: string;
