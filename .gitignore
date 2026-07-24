@@ -18,6 +18,8 @@
 
 # misc
 .DS_Store
+# macOS AppleDouble resource-fork files (exFAT volumes) — never commit
+._*
 *.pem
 
 # log files
