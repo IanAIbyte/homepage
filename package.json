@@ -5,7 +5,9 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "dev": "next dev",
+    "prebuild": "find . -name '._*' -delete 2>/dev/null; find . -name '.DS_Store' -delete 2>/dev/null; true",
     "build": "next build --webpack",
+    "clean": "find . -name '._*' -delete 2>/dev/null; find . -name '.DS_Store' -delete 2>/dev/null; true",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
