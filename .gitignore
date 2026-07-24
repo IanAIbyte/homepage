@@ -52,3 +52,6 @@ site*/
 
 # venv
 .venv/
+
+# archify generated diagrams
+data/archify/
