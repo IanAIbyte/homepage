@@ -4,6 +4,7 @@ const components = {
   adguard: dynamic(() => import("./adguard/component")),
   apcups: dynamic(() => import("./apcups/component")),
   arcane: dynamic(() => import("./arcane/component")),
+  archify: dynamic(() => import("./archify/component")),
   argocd: dynamic(() => import("./argocd/component")),
   atsumeru: dynamic(() => import("./atsumeru/component")),
   audiobookshelf: dynamic(() => import("./audiobookshelf/component")),
