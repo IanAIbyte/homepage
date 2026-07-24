@@ -97,7 +97,20 @@ export default function Component({ service }) {
             >
               ×
             </button>
-            <iframe src={`/api/archify/${id}`} title="archify" className="h-full w-full rounded-lg" />
+            {state === "missing" || state === "failed" ? (
+              <div className="flex h-full flex-col items-center justify-center gap-4 text-center text-gray-400">
+                <div className="font-mono text-lg">{state === "failed" ? "上次生成失败" : "尚无架构图"}</div>
+                <button
+                  className="rounded border border-amber-500/50 px-4 py-2 font-mono text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
+                  onClick={regenerate}
+                  disabled={busy}
+                >
+                  {busy ? "生成中…" : state === "failed" ? "重新生成（archify）" : "用 archify 生成"}
+                </button>
+              </div>
+            ) : (
+              <iframe src={`/api/archify/${id}`} title="archify" className="h-full w-full rounded-lg" />
+            )}
           </div>
         </div>
       )}

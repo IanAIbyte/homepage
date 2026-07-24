@@ -91,3 +91,25 @@ test("subdirectories in the project do not count as newer code", async () => {
   const s = await inspectArchify(id, projectDir);
   expect(s.renderState).toBe("ok");
 });
+
+test("reuse: project-dir archify diagram found when data dir is empty (source 'project')", async () => {
+  // No Homepage data-dir artifact for this id -> fall back to a diagram the
+  // archify skill already generated into the project dir (*.architecture.json).
+  fs.writeFileSync(path.join(projectDir, "rigcraft.architecture.json"), "{}");
+  fs.writeFileSync(path.join(projectDir, "rigcraft-architecture.html"), "<svg></svg>");
+  const s = await inspectArchify("rig-craft", projectDir);
+  expect(s.renderState).toBe("ok");
+  expect(s.source).toBe("project");
+});
+
+test("resolveDiagramHtml prefers Homepage data, else reuses project-dir diagram", async () => {
+  fs.writeFileSync(path.join(projectDir, "rigcraft.architecture.json"), "{}");
+  fs.writeFileSync(path.join(projectDir, "rigcraft-architecture.html"), "<svg></svg>");
+  const { resolveDiagramHtml } = await import("./status.js");
+  // data dir empty -> project-dir html
+  expect(await resolveDiagramHtml("rig-craft", projectDir)).toBe(path.join(projectDir, "rigcraft-architecture.html"));
+  // Homepage's own generation wins once present
+  await writeJson("rig-craft");
+  await writeHtml("rig-craft");
+  expect(await resolveDiagramHtml("rig-craft", projectDir)).toBe(path.join(holder.tmp, "rig-craft-architecture.html"));
+});

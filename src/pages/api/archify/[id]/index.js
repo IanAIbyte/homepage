@@ -1,16 +1,23 @@
 import fs from "fs/promises";
-import { htmlPath } from "../../../../archify/paths";
+import { resolveProjectPath } from "../../../../archify/paths";
+import { resolveDiagramHtml } from "../../../../archify/status";
 import { getServiceArchifyPath } from "../../../../archify/service-config";
 
-// Serves the generated archify diagram HTML for a service id.
-// GET /api/archify/[id] -> 200 text/html, or 404 if no diagram exists yet.
+// Serves the archify diagram HTML for a service id: Homepage's own generated
+// diagram (data/archify) if present, else a reused one from the project dir
+// (e.g. produced by project-hub / the archify skill). 404 if neither exists.
 export default async function handler(req, res) {
   const { id } = req.query;
-  if (!(await getServiceArchifyPath(id))) {
+  const raw = await getServiceArchifyPath(id);
+  if (!raw) {
     return res.status(404).send({ error: "unknown project" });
   }
+  const html = await resolveDiagramHtml(id, resolveProjectPath(raw));
+  if (!html) {
+    return res.status(404).send({ error: "no diagram" });
+  }
   try {
-    const body = await fs.readFile(htmlPath(id));
+    const body = await fs.readFile(html);
     res.setHeader("Content-Type", "text/html");
     return res.send(body);
   } catch {

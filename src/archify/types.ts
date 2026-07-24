@@ -25,4 +25,6 @@ export type RenderState = "ok" | "stale" | "missing" | "failed";
 export interface ArchifyStatus {
   renderState: RenderState;
   htmlMtime?: string;
+  /** where the diagram was found: Homepage's own data dir, or reused from the project dir */
+  source?: "homepage" | "project";
 }
