@@ -11,21 +11,21 @@ const DOT_CLASS = {
 };
 
 function busyLabel(job) {
-  if (job?.stage === "analyzing") return "分析中";
-  if (job?.stage === "rendering") return "渲染中";
-  return "生成中";
+  if (job?.stage === "analyzing") return "Analyzing";
+  if (job?.stage === "rendering") return "Rendering";
+  return "Generating";
 }
 
 function relativeTime(iso) {
   if (!iso) return "";
   const ms = Date.now() - new Date(iso).getTime();
   const d = Math.floor(ms / 86400000);
-  if (d >= 1) return `${d}天前`;
+  if (d >= 1) return `${d}d ago`;
   const h = Math.floor(ms / 3600000);
-  if (h >= 1) return `${h}小时前`;
+  if (h >= 1) return `${h}h ago`;
   const m = Math.floor(ms / 60000);
-  if (m >= 1) return `${m}分钟前`;
-  return "刚刚";
+  if (m >= 1) return `${m}m ago`;
+  return "just now";
 }
 
 export default function Component({ service }) {
@@ -145,7 +145,7 @@ export default function Component({ service }) {
           className="pointer-events-auto self-start font-mono text-[10px] text-theme-500/70 hover:text-amber-400"
           onClick={() => setOpen(true)}
         >
-          查看架构图 →
+          View diagram →
         </button>
       </div>
       {open &&
@@ -173,13 +173,13 @@ export default function Component({ service }) {
                 </div>
               ) : state === "missing" || state === "failed" ? (
                 <div className="flex h-full flex-col items-center justify-center gap-4 text-center text-gray-400">
-                  <div className="font-mono text-lg">{state === "failed" ? "上次生成失败" : "尚无架构图"}</div>
+                  <div className="font-mono text-lg">{state === "failed" ? "Last run failed" : "No diagram yet"}</div>
                   <button
                     className="rounded border border-amber-500/50 px-4 py-2 font-mono text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
                     onClick={regenerate}
                     disabled={busy}
                   >
-                    {state === "failed" ? "重新生成（archify）" : "用 archify 生成"}
+                    {state === "failed" ? "Regenerate" : "Generate with archify"}
                   </button>
                 </div>
               ) : (
