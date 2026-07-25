@@ -57,3 +57,4 @@ site*/
 
 # archify generated diagrams
 data/archify/
+.gstack/

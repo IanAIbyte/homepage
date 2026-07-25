@@ -2,11 +2,29 @@ import Container from "components/services/widget/container";
 import { useEffect, useRef, useState } from "react";
 
 const STATE_LABEL = { ok: "ok", stale: "stale", failed: "failed", missing: "—" };
+const DOT_CLASS = {
+  ok: "bg-emerald-500",
+  stale: "bg-amber-500",
+  failed: "bg-rose-500",
+  missing: "bg-gray-500",
+};
 
 function busyLabel(job) {
   if (job?.stage === "analyzing") return "分析中";
   if (job?.stage === "rendering") return "渲染中";
   return "生成中";
+}
+
+function relativeTime(iso) {
+  if (!iso) return "";
+  const ms = Date.now() - new Date(iso).getTime();
+  const d = Math.floor(ms / 86400000);
+  if (d >= 1) return `${d}天前`;
+  const h = Math.floor(ms / 3600000);
+  if (h >= 1) return `${h}小时前`;
+  const m = Math.floor(ms / 60000);
+  if (m >= 1) return `${m}分钟前`;
+  return "刚刚";
 }
 
 export default function Component({ service }) {
@@ -24,12 +42,9 @@ export default function Component({ service }) {
     } catch {}
   }
 
-  // Poll a regenerate job to completion: update busy/job while running, then
-  // clear busy + refresh status when done/failed. Shared by regenerate() and
-  // the on-mount re-attach (so a page refresh resumes the in-flight job).
   function pollJob(jobId) {
     let attempts = 0;
-    const MAX_ATTEMPTS = 620; // ~15 min at 1.5s, matching the server analyzer timeout
+    const MAX_ATTEMPTS = 620;
     const poll = async () => {
       try {
         const j = await (await fetch(`/api/archify/jobs/${jobId}`)).json();
@@ -63,8 +78,6 @@ export default function Component({ service }) {
   useEffect(() => {
     refresh();
     const t = setInterval(refresh, 15000);
-    // Re-attach to an in-flight job (e.g. after a page refresh): the job runs
-    // server-side and survives a refresh, but the widget's busy state does not.
     (async () => {
       try {
         const r = await fetch(`/api/archify/${id}/job`);
@@ -103,20 +116,31 @@ export default function Component({ service }) {
           ? "text-rose-500"
           : "text-gray-500";
   const lastProgress = job?.progress?.length ? job.progress[job.progress.length - 1] : null;
+  const relTime = !busy ? relativeTime(status?.htmlMtime) : "";
 
   return (
     <Container service={service}>
-      <div className="flex items-center gap-2 text-xs">
-        <button className={`pointer-events-auto font-mono ${color}`} onClick={() => setOpen(true)} title="view diagram">
-          ◈ archify · {busy ? busyLabel(job) : STATE_LABEL[state]}
-        </button>
+      <div className="flex w-full flex-col gap-1.5 text-xs">
+        <div className="flex items-center justify-between gap-2">
+          <button className={`pointer-events-auto flex items-center gap-1.5 font-mono ${color}`} onClick={() => setOpen(true)} title="view diagram">
+            <span className={`inline-block h-2 w-2 rounded-full ${DOT_CLASS[state]}`} />
+            archify · {busy ? busyLabel(job) : STATE_LABEL[state]}
+            {!busy && relTime ? <span className="text-gray-500"> · {relTime}</span> : null}
+          </button>
+          <button
+            className="pointer-events-auto font-mono text-theme-500 hover:text-amber-400"
+            onClick={regenerate}
+            disabled={busy}
+            title={busy && lastProgress ? lastProgress : "regenerate"}
+          >
+            {busy ? busyLabel(job) : "↻"}
+          </button>
+        </div>
         <button
-          className="pointer-events-auto font-mono text-theme-500 hover:text-amber-500"
-          onClick={regenerate}
-          disabled={busy}
-          title={busy && lastProgress ? lastProgress : "regenerate"}
+          className="pointer-events-auto self-start font-mono text-[10px] text-theme-500/70 hover:text-amber-400"
+          onClick={() => setOpen(true)}
         >
-          {busy ? busyLabel(job) : "↻"}
+          查看架构图 →
         </button>
       </div>
       {open && (
