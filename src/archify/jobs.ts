@@ -27,6 +27,14 @@ export function hasRunningFor(projectId: string): boolean {
   return false;
 }
 
+/** The in-flight job for a project, if any (so a refreshed widget can re-attach). */
+export function runningJobFor(projectId: string): Job | undefined {
+  for (const j of jobs.values()) {
+    if (j.projectId === projectId && (j.status === "queued" || j.status === "running")) return j;
+  }
+  return undefined;
+}
+
 export function runningCount(): number {
   let n = 0;
   for (const j of jobs.values()) if (j.status === "queued" || j.status === "running") n++;

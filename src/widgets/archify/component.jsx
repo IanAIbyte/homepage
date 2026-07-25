@@ -23,11 +23,35 @@ export default function Component({ service }) {
       setStatus(await (await fetch(`/api/archify/${id}/status`)).json());
     } catch {}
   }
-  useEffect(() => {
-    refresh();
-    const t = setInterval(refresh, 15000);
-    return () => clearInterval(t);
-  }, []);
+
+  // Poll a regenerate job to completion: update busy/job while running, then
+  // clear busy + refresh status when done/failed. Shared by regenerate() and
+  // the on-mount re-attach (so a page refresh resumes the in-flight job).
+  function pollJob(jobId) {
+    let attempts = 0;
+    const MAX_ATTEMPTS = 620; // ~15 min at 1.5s, matching the server analyzer timeout
+    const poll = async () => {
+      try {
+        const j = await (await fetch(`/api/archify/jobs/${jobId}`)).json();
+        if (!mountedRef.current) return;
+        setJob(j);
+        if ((j.status === "running" || j.status === "queued") && attempts++ < MAX_ATTEMPTS) {
+          pollTimer.current = setTimeout(poll, 1500);
+        } else {
+          setBusy(false);
+          setJob(null);
+          refresh();
+        }
+      } catch {
+        if (mountedRef.current) {
+          setBusy(false);
+          setJob(null);
+        }
+      }
+    };
+    poll();
+  }
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -36,34 +60,33 @@ export default function Component({ service }) {
     };
   }, []);
 
+  useEffect(() => {
+    refresh();
+    const t = setInterval(refresh, 15000);
+    // Re-attach to an in-flight job (e.g. after a page refresh): the job runs
+    // server-side and survives a refresh, but the widget's busy state does not.
+    (async () => {
+      try {
+        const r = await fetch(`/api/archify/${id}/job`);
+        if (r.ok) {
+          const j = await r.json();
+          if (j.jobId) {
+            setBusy(true);
+            setJob(j);
+            pollJob(j.jobId);
+          }
+        }
+      } catch {}
+    })();
+    return () => clearInterval(t);
+  }, []);
+
   async function regenerate() {
     setBusy(true);
     setJob(null);
     try {
       const { jobId } = await (await fetch(`/api/archify/${id}/regenerate`, { method: "POST" })).json();
-      let attempts = 0;
-      // keep polling across the full server-side analyzer window (15 min default)
-      const MAX_ATTEMPTS = 620;
-      const poll = async () => {
-        try {
-          const j = await (await fetch(`/api/archify/jobs/${jobId}`)).json();
-          if (!mountedRef.current) return;
-          setJob(j);
-          if ((j.status === "running" || j.status === "queued") && attempts++ < MAX_ATTEMPTS) {
-            pollTimer.current = setTimeout(poll, 1500);
-          } else {
-            setBusy(false);
-            setJob(null);
-            refresh();
-          }
-        } catch {
-          if (mountedRef.current) {
-            setBusy(false);
-            setJob(null);
-          }
-        }
-      };
-      poll();
+      pollJob(jobId);
     } catch {
       setBusy(false);
       setJob(null);
