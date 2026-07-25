@@ -1,5 +1,6 @@
 import Container from "components/services/widget/container";
 import { useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 
 const STATE_LABEL = { ok: "ok", stale: "stale", failed: "failed", missing: "—" };
 const DOT_CLASS = {
@@ -122,7 +123,11 @@ export default function Component({ service }) {
     <Container service={service}>
       <div className="flex w-full flex-col gap-1.5 text-xs">
         <div className="flex items-center justify-between gap-2">
-          <button className={`pointer-events-auto flex items-center gap-1.5 font-mono ${color}`} onClick={() => setOpen(true)} title="view diagram">
+          <button
+            className={`pointer-events-auto flex items-center gap-1.5 font-mono ${color}`}
+            onClick={() => setOpen(true)}
+            title="view diagram"
+          >
             <span className={`inline-block h-2 w-2 rounded-full ${DOT_CLASS[state]}`} />
             archify · {busy ? busyLabel(job) : STATE_LABEL[state]}
             {!busy && relTime ? <span className="text-gray-500"> · {relTime}</span> : null}
@@ -143,45 +148,47 @@ export default function Component({ service }) {
           查看架构图 →
         </button>
       </div>
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
-          onClick={() => setOpen(false)}
-        >
+      {open &&
+        ReactDOM.createPortal(
           <div
-            className="relative h-[85vh] w-[90vw] rounded-lg border border-theme-500/40 bg-black"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
+            onClick={() => setOpen(false)}
           >
-            <button
-              className="absolute right-2 top-2 z-10 rounded border border-theme-500/40 px-2 text-sm"
-              onClick={() => setOpen(false)}
+            <div
+              className="relative h-[85vh] w-[90vw] rounded-lg border border-theme-500/40 bg-black"
+              onClick={(e) => e.stopPropagation()}
             >
-              ×
-            </button>
-            {busy ? (
-              <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-gray-400">
-                <div className="font-mono text-lg text-amber-400">{busyLabel(job)}…</div>
-                {lastProgress ? (
-                  <div className="max-w-xl truncate font-mono text-[11px] text-gray-500">{lastProgress}</div>
-                ) : null}
-              </div>
-            ) : state === "missing" || state === "failed" ? (
-              <div className="flex h-full flex-col items-center justify-center gap-4 text-center text-gray-400">
-                <div className="font-mono text-lg">{state === "failed" ? "上次生成失败" : "尚无架构图"}</div>
-                <button
-                  className="rounded border border-amber-500/50 px-4 py-2 font-mono text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
-                  onClick={regenerate}
-                  disabled={busy}
-                >
-                  {state === "failed" ? "重新生成（archify）" : "用 archify 生成"}
-                </button>
-              </div>
-            ) : (
-              <iframe src={`/api/archify/${id}`} title="archify" className="h-full w-full rounded-lg" />
-            )}
-          </div>
-        </div>
-      )}
+              <button
+                className="absolute right-2 top-2 z-10 rounded border border-theme-500/40 px-2 text-sm"
+                onClick={() => setOpen(false)}
+              >
+                ×
+              </button>
+              {busy ? (
+                <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-gray-400">
+                  <div className="font-mono text-lg text-amber-400">{busyLabel(job)}…</div>
+                  {lastProgress ? (
+                    <div className="max-w-xl truncate font-mono text-[11px] text-gray-500">{lastProgress}</div>
+                  ) : null}
+                </div>
+              ) : state === "missing" || state === "failed" ? (
+                <div className="flex h-full flex-col items-center justify-center gap-4 text-center text-gray-400">
+                  <div className="font-mono text-lg">{state === "failed" ? "上次生成失败" : "尚无架构图"}</div>
+                  <button
+                    className="rounded border border-amber-500/50 px-4 py-2 font-mono text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
+                    onClick={regenerate}
+                    disabled={busy}
+                  >
+                    {state === "failed" ? "重新生成（archify）" : "用 archify 生成"}
+                  </button>
+                </div>
+              ) : (
+                <iframe src={`/api/archify/${id}`} title="archify" className="h-full w-full rounded-lg" />
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </Container>
   );
 }
