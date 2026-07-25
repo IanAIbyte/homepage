@@ -108,7 +108,7 @@ export default function Component({ service }) {
     <Container service={service}>
       <div className="flex items-center gap-2 text-xs">
         <button className={`pointer-events-auto font-mono ${color}`} onClick={() => setOpen(true)} title="view diagram">
-          ◈ archify · {STATE_LABEL[state]}
+          ◈ archify · {busy ? busyLabel(job) : STATE_LABEL[state]}
         </button>
         <button
           className="pointer-events-auto font-mono text-theme-500 hover:text-amber-500"
